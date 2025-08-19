@@ -7,12 +7,8 @@ import PlayerSheet from './components/PlayerSheet';
 import PlayerCard from './components/PlayerCard';
 import './App.css';
 import socket from './socket';
-// ...existing code...
+import CharacterCreator from './components/CharacterCreator';
 
-
-// ...existing code...
-
-// ...existing code...
 
 // --- Main App Component ---
 export default function App() {
