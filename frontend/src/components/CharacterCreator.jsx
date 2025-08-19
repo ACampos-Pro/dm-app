@@ -10,7 +10,31 @@ const roles = [
   "MedTech",
 ];
 
+const roleTooltips = {
+  "Street Merc": `Street Merc
+
+💪 Advantage:
+Always ready for a fight — +1 on any combat roll when using guns or melee weapons.
+Can intimidate low-level gangers and petty criminals without a roll.
+Knows black market arms dealers — can find weapons faster/cheaper than others.
+
+⚠ Disadvantage:
+Not subtle — Stealth attempts are always made at disadvantage.
+Loud reputation — Enemies are more likely to target or challenge you.
+Overly direct — struggles with complex tech or hacking challenges.`,
+};
+
 const weapons = ["Pistol", "Blade", "SMG", "Shotgun", "Hacking Deck"];
+const gearOptions = [
+  "Medkit",
+  "Lockpick Set",
+  "EMP Grenade",
+  "Holo Projector",
+  "Armor Vest",
+  "Data Chip",
+  "Stim Pack",
+  "Grapple Hook",
+];
 const cybernetics = [
   "Optical Enhancer",
   "Reflex Boosters",
@@ -38,13 +62,10 @@ function CharacterCreator({ initialName, onSubmit }) {
     age: "",
     look: "",
     role: "",
-    otherRole: "",
     stats: { grit: 0, reflex: 0, smarts: 0, charm: 0, cool: 0 },
     weapons: [],
-    customWeapon: "",
     cybernetic: "",
-    customCybernetic: "",
-    gear: "",
+    gear: [],
     skills: [],
     background: {
       birthplace: "",
@@ -55,6 +76,7 @@ function CharacterCreator({ initialName, onSubmit }) {
   });
 
   const [statPointsLeft, setStatPointsLeft] = useState(10);
+  const [hoveredRole, setHoveredRole] = useState(null);
 
   // Handle simple input changes
   const handleChange = (field) => (e) => {
@@ -100,6 +122,19 @@ function CharacterCreator({ initialName, onSubmit }) {
     setForm((f) => ({ ...f, weapons: newWeapons }));
   };
 
+  // Toggle gear (max 2)
+  const toggleGear = (gear) => {
+    const hasGear = form.gear.includes(gear);
+    let newGear;
+    if (hasGear) {
+      newGear = form.gear.filter((g) => g !== gear);
+    } else {
+      if (form.gear.length >= 2) return; // max 2 gear
+      newGear = [...form.gear, gear];
+    }
+    setForm((f) => ({ ...f, gear: newGear }));
+  };
+
   // Toggle skills (max 2)
   const toggleSkill = (skill) => {
     const hasSkill = form.skills.includes(skill);
@@ -120,8 +155,8 @@ function CharacterCreator({ initialName, onSubmit }) {
       alert("Name is required");
       return;
     }
-    if (!form.role && !form.otherRole.trim()) {
-      alert("Please pick or enter a role");
+    if (!form.role) {
+      alert("Please pick a role");
       return;
     }
     if (statPointsLeft !== 0) {
@@ -130,6 +165,18 @@ function CharacterCreator({ initialName, onSubmit }) {
     }
     if (form.skills.length !== 2) {
       alert("Please choose exactly 2 skills");
+      return;
+    }
+    if (form.weapons.length === 0) {
+      alert("Please choose at least 1 weapon");
+      return;
+    }
+    if (!form.cybernetic) {
+      alert("Please choose a cybernetic");
+      return;
+    }
+    if (form.gear.length === 0) {
+      alert("Please choose at least 1 gear item");
       return;
     }
     // pass full form data back
@@ -176,27 +223,46 @@ function CharacterCreator({ initialName, onSubmit }) {
       </label>
 
       <h3>🛠️ ROLE / ARCHETYPE</h3>
-      <p>Pick one (or write your own):</p>
-      {roles.map((r) => (
-        <label key={r} style={{ display: "block" }}>
-          <input
-            type="radio"
-            name="role"
-            value={r}
-            checked={form.role === r}
-            onChange={handleChange("role")}
-          />{" "}
-          {r}
-        </label>
-      ))}
-      <label>
-        Other:{" "}
-        <input
-          value={form.otherRole}
-          onChange={handleChange("otherRole")}
-          placeholder="Custom role"
-        />
-      </label>
+      <p>Pick one:</p>
+      <div>
+        {roles.map((r) => (
+          <label
+            key={r}
+            style={{ display: "block", position: "relative" }}
+            onMouseEnter={() => setHoveredRole(r)}
+            onMouseLeave={() => setHoveredRole(null)}
+          >
+            <input
+              type="radio"
+              name="role"
+              value={r}
+              checked={form.role === r}
+              onChange={handleChange("role")}
+            />{" "}
+            {r}
+            {hoveredRole === r && roleTooltips[r] && (
+              <div
+                style={{
+                  position: "absolute",
+                  left: "110%",
+                  top: 0,
+                  background: "#181825",
+                  color: "#cdd6f4",
+                  border: "1px solid #45475a",
+                  borderRadius: 8,
+                  padding: "1rem",
+                  width: 320,
+                  zIndex: 10,
+                  whiteSpace: "pre-line",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
+                }}
+              >
+                {roleTooltips[r]}
+              </div>
+            )}
+          </label>
+        ))}
+      </div>
 
       <h3>📊 STATS (1-5 scale, distribute 10 points total)</h3>
       <p>Points left: {statPointsLeft}</p>
@@ -214,8 +280,7 @@ function CharacterCreator({ initialName, onSubmit }) {
         </label>
       ))}
 
-      <h3>🧰 GEAR</h3>
-      <p>Pick or write in 1-2 weapons:</p>
+      <h3>🧰 WEAPONS (Pick up to 2)</h3>
       {weapons.map((w) => (
         <label key={w} style={{ display: "inline-block", width: "48%" }}>
           <input
@@ -229,17 +294,23 @@ function CharacterCreator({ initialName, onSubmit }) {
           {w}
         </label>
       ))}
-      <br />
-      <label>
-        Custom Weapon:{" "}
-        <input
-          value={form.customWeapon}
-          onChange={handleChange("customWeapon")}
-          placeholder="Custom weapon"
-        />
-      </label>
 
-      <p>Pick one cybernetic:</p>
+      <h3>🎒 GEAR (Pick up to 2)</h3>
+      {gearOptions.map((g) => (
+        <label key={g} style={{ display: "inline-block", width: "48%" }}>
+          <input
+            type="checkbox"
+            checked={form.gear.includes(g)}
+            onChange={() => toggleGear(g)}
+            disabled={
+              !form.gear.includes(g) && form.gear.length >= 2
+            }
+          />{" "}
+          {g}
+        </label>
+      ))}
+
+      <h3>🦾 CYBERNETICS (Pick one)</h3>
       {cybernetics.map((c) => (
         <label key={c} style={{ display: "block" }}>
           <input
@@ -252,22 +323,6 @@ function CharacterCreator({ initialName, onSubmit }) {
           {c}
         </label>
       ))}
-      <label>
-        Custom Cybernetic:{" "}
-        <input
-          value={form.customCybernetic}
-          onChange={handleChange("customCybernetic")}
-          placeholder="Custom cybernetic"
-        />
-      </label>
-
-      <p>Gear/Item (optional flair):</p>
-      <input
-        value={form.gear}
-        onChange={handleChange("gear")}
-        placeholder="Gear or item"
-        style={{ width: "100%" }}
-      />
 
       <h3>🎯 SKILLS (choose 2)</h3>
       {skills.map((s) => (
