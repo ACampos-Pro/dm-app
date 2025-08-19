@@ -1,13 +1,20 @@
 import React, { useState, useEffect } from 'react';
+import PlayerSheet from './PlayerSheet';
 
 export default function PlayerView({ socket, sessionCode, playerName, characterData }) {
-  const [hp, setHp] = useState(0);
-  const [xp, setXp] = useState(0);
-  const [gold, setGold] = useState(0);
-  const [inventory, setInventory] = useState([]);
+  const [hp, setHp] = useState(characterData?.hp ?? 0);
+  const [xp, setXp] = useState(characterData?.xp ?? 0);
+  const [gold, setGold] = useState(characterData?.gold ?? 0);
+  const [inventory, setInventory] = useState(characterData?.inventory ?? []);
   const [log, setLog] = useState([]);
 
-  // Listen for DM updates
+  useEffect(() => {
+    setHp(characterData?.hp ?? 0);
+    setXp(characterData?.xp ?? 0);
+    setGold(characterData?.gold ?? 0);
+    setInventory(characterData?.inventory ?? []);
+  }, [characterData]);
+
   useEffect(() => {
     socket.on('updateStats', ({ target, hp, xp, gold }) => {
       if (target === playerName) {
@@ -35,43 +42,28 @@ export default function PlayerView({ socket, sessionCode, playerName, characterD
   }, [socket, playerName]);
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Welcome, {characterData?.name || playerName}</h2>
+    <div className="view">
+      <h2>Welcome, {characterData?.info?.name || playerName}</h2>
+      <PlayerSheet player={{ ...characterData, hp, xp, gold, inventory }} />
 
-      <div style={{ marginBottom: 20 }}>
-        <h3>Character Sheet</h3>
-        <pre>{JSON.stringify(characterData, null, 2)}</pre>
-      </div>
-
-      <h3>Stats</h3>
-      <p>HP: {hp}</p>
-      <p>XP: {xp}</p>
-      <p>Gold: {gold}</p>
-
-      <h3>Inventory</h3>
-      {inventory.length > 0 ? (
-        <ul>
-          {inventory.map((item, idx) => (
-            <li key={idx}>{item}</li>
+      <div style={{ marginTop: 24 }}>
+        <h3>Game Log</h3>
+        <div
+          style={{
+            background: '#111',
+            color: '#0f0',
+            padding: 10,
+            maxHeight: 200,
+            overflowY: 'auto',
+            borderRadius: 4,
+            fontFamily: 'monospace',
+            fontSize: 14,
+          }}
+        >
+          {log.map((entry, idx) => (
+            <div key={idx}>{entry}</div>
           ))}
-        </ul>
-      ) : (
-        <p>No items yet.</p>
-      )}
-
-      <h3>Game Log</h3>
-      <div
-        style={{
-          background: '#111',
-          color: '#0f0',
-          padding: 10,
-          maxHeight: 200,
-          overflowY: 'auto',
-        }}
-      >
-        {log.map((entry, idx) => (
-          <div key={idx}>{entry}</div>
-        ))}
+        </div>
       </div>
     </div>
   );
